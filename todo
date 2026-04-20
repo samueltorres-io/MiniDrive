@@ -1,5 +1,5 @@
 [] Front em Angular
 [] Back em c#/dotnet
 [] Docker para infra
-[] Minio para o storage de objetos
+[] Minio para o storage de objetos (https://github.com/minio/minio-dotnet)
 [] PostgreSQL para db
