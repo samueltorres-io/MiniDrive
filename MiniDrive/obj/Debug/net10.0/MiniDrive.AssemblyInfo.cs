@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MiniDrive")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24367221e813c7790bb2b4b790d4c88d552b4bea")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+47084a706c06cf42b44862f64b29b2e119e43489")]
 [assembly: System.Reflection.AssemblyProductAttribute("MiniDrive")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MiniDrive")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
