@@ -1,2 +1,4 @@
-MiniDrive/bin
-MiniDrive/obj
+**/bin/
+**/obj/
+
+.vs/
