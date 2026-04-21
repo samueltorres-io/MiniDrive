@@ -47,5 +47,33 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        /* Files */
+        modelBuilder.Entity<DriveFile>(e =>
+        {
+            e.ToTable("files");
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Name).HasMaxLength(256).IsRequired();
+            e.Property(f => f.Extension).HasMaxLength(20);
+            e.Property(f => f.Status)
+                .HasMaxLength(20)
+                .IsRequired()
+                .HasDefaultValue("pending");
+            e.HasIndex(f => f.UserId);
+            e.HasIndex(f => f.FolderId);
+            e.HasIndex(f => f.Status);
+            e.HasOne(f => f.User)
+                .WithMany(u => u.Files)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(f => f.Folder)
+                .WithMany(folder => folder.Files)
+                .HasForeignKey(f => f.FolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(f => f.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(f => f.DeletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
     }
 }
