@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MiniDrive.Data;
 using MiniDrive.Models;
 
@@ -62,7 +63,8 @@ public class UserService : IUserService
         GetUserRequest request,
         CancellationToken cancellationToken = default)
     {
-        var hasId = request.Id is int id && id > 0;
+        int? id = request.Id is int parsedId && parsedId > 0 ? parsedId : null;
+        var hasId = id.HasValue;
         var hasUsername = !string.IsNullOrWhiteSpace(request.Username);
 
         if (!hasId && !hasUsername)
@@ -75,12 +77,12 @@ public class UserService : IUserService
         {
             var username = request.Username!.Trim();
             user = await query.FirstOrDefaultAsync(
-                u => u.Id == id && u.Username == username,
+                u => u.Id == id!.Value && u.Username == username,
                 cancellationToken);
         }
         else if (hasId)
         {
-            user = await query.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            user = await query.FirstOrDefaultAsync(u => u.Id == id!.Value, cancellationToken);
         }
         else
         {
