@@ -10,4 +10,20 @@ public class AppDbContext : DbContext
     public DbSet<DriveUser> Users { get; set; } = null!;
     public DbSet<DriveFile> Files { get; set; } = null!;
     public DbSet<DriveFolder> Folders { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+
+        /* User */
+        modelBuilder.Entity<DriveUser>(e =>
+        {
+            e.ToTable("users");
+            e.HasKey(u => u.Id);
+            e.Property(u => u.Username)
+                .HasMaxLength(40)
+                .IsRequired();
+            e.HasIndex(u => u.Username).IsUnique();
+        });
+
+    }
 }
