@@ -4,12 +4,17 @@ using MiniDrive.Models;
 namespace MiniDrive.Services;
 
 public record CreateUserRequest(string Username);
+public record GetUserRequest(string? Username, int? Id);
 public record UserResponse(int Id, string Username, DateTime CreatedAt);
 
 public interface IUserService
 {
     Task<UserResponse> CreateAsync(
         CreateUserRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<UserResponse> GetAsync(
+        GetUserRequest request,
         CancellationToken cancellationToken = default);
 }
 
@@ -49,6 +54,42 @@ public class UserService : IUserService
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync(cancellationToken);
+
+        return new UserResponse(user.Id, user.Username, user.CreatedAt);
+    }
+
+    public async Task<UserResponse> GetAsync(
+        GetUserRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var hasId = request.Id is int id && id > 0;
+        var hasUsername = !string.IsNullOrWhiteSpace(request.Username);
+
+        if (!hasId && !hasUsername)
+            throw new ArgumentException("Enter the ID or Username to search for the user!", nameof(request));
+
+        var query = _db.Users.AsNoTracking();
+
+        DriveUser? user;
+        if (hasId && hasUsername)
+        {
+            var username = request.Username!.Trim();
+            user = await query.FirstOrDefaultAsync(
+                u => u.Id == id && u.Username == username,
+                cancellationToken);
+        }
+        else if (hasId)
+        {
+            user = await query.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        }
+        else
+        {
+            var username = request.Username!.Trim();
+            user = await query.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+        }
+
+        if (user is null)
+            throw new KeyNotFoundException("User not found!");
 
         return new UserResponse(user.Id, user.Username, user.CreatedAt);
     }
