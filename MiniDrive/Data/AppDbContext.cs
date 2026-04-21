@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using MiniDrive.Models;
 
 namespace MiniDrive.Data;
