@@ -1,0 +1,114 @@
+name: minidrive
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: minidrive-postgres
+    environment:
+      POSTGRES_DB: minidrive
+      POSTGRES_USER: minidrive
+      POSTGRES_PASSWORD: minidrive
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - minidrive
+
+  minio:
+    image: minio/minio:latest
+    container_name: minidrive-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - minidrive
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minidrive-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-lc"]
+    command: >
+      mc alias set minio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
+      mc mb -p minio/minidrive || true &&
+      mc anonymous set download minio/minidrive || true
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    networks:
+      - minidrive
+    restart: "no"
+
+  api:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    container_name: minidrive-api
+    working_dir: /src
+    volumes:
+      - ./MiniDrive:/src
+      - nuget:/root/.nuget/packages
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=minidrive;Username=minidrive;Password=minidrive
+      Minio__Endpoint: http://minio:9000
+      Minio__AccessKey: minioadmin
+      Minio__SecretKey: minioadmin
+      Minio__Bucket: minidrive
+    command: >
+      bash -lc "dotnet restore ./MiniDrive.csproj &&
+      dotnet watch --project ./MiniDrive.csproj run --urls http://0.0.0.0:8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - minidrive
+
+  web:
+    image: node:20-alpine
+    container_name: minidrive-web
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      # API_URL: http://localhost:8080
+    command: sh -lc "npm install && npm run start -- --host 0.0.0.0 --port 4200"
+    ports:
+      - "4200:4200"
+    depends_on:
+      - api
+    networks:
+      - minidrive
+
+volumes:
+  pgdata:
+  miniodata:
+  nuget:
+
+networks:
+  minidrive:
