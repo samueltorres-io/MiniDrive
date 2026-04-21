@@ -1,14 +1,14 @@
 namespace MiniDrive.Models;
 
-public class File
+public class DriveFile
 {
     public int Id { get; set; }
 
     public int UserId { get; set; }
-    public User User { get; set; } = default!;
+    public DriveUser User { get; set; } = default!;
 
     public int? FolderId { get; set; }
-    public Folder? Folder { get; set; }
+    public DriveFolder? Folder { get; set; }
 
     public string Name { get; set; } = default!;
     public string? Extension { get; set; }
@@ -21,5 +21,5 @@ public class File
 
     public DateTime? DeletedAt { get; set; }
     public int? DeletedBy { get; set; }
-    public User? DeletedByUser { get; set; }
+    public DriveUser? DeletedByUser { get; set; }
 }
