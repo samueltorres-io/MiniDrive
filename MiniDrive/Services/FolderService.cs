@@ -138,18 +138,57 @@ public class FolderService : IFolderService
         DeleteFolderRequest request,
         CancellationToken cancellationToken = default)
     {
-        /**
-        * Busca se pasta existe e se é do usuário
-        * Define como Soft Delete
-        * Pega todos os arquivos e pastas filhos e define de forma async, todos os childrens como soft deleted
-        */
+        
+        var folder = await _db.Folders
+            .FirstOrDefaultAsync(
+                f => f.Id == request.FolderId
+                    && f.UserId == request.UserId
+                    && f.DeletedAt == null,
+                cancellationToken);
+
+        if (folder is null)
+            throw new ApplicationException("Folder not found!");
+
+        var allFolderIds = new List<int> { folder.Id };
+        var queue = new Queue<int>();
+        queue.Enqueue(folder.Id);
+
+        while (queue.Count > 0)
+        {
+            var currentId = queue.Dequeue();
+
+            var childIds = await _db.Folders
+                .Where(f => f.ParentId == currentId && f.DeletedAt == null)
+                .Select(f => f.Id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var id in childIds)
+            {
+                allFolderIds.Add(id);
+                queue.Enqueue(id);
+            }
+        }
+
+        var now = DateTime.UtcNow;
+
+        /* Soft delete em batch das pastas */
+        await _db.Folders
+            .Where(f => allFolderIds.Contains(f.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(f => f.DeletedAt, now)
+                .SetProperty(f => f.DeletedBy, request.UserId),
+            cancellationToken);
+
+        /* Soft delete em batch dos arquivos */
+        await _db.Files
+            .Where(f => f.FolderId != null
+                    && allFolderIds.Contains(f.FolderId!.Value)
+                    && f.DeletedAt == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(f => f.DeletedAt, now)
+                .SetProperty(f => f.DeletedBy, request.UserId),
+            cancellationToken);
+
+        return true;
     }
-
 }
-
-/*
-Folders
-    POST /api/folders — criar (body: userId, name, parentId?)
-    GET  /api/folders?userId=&parentId= — listar (serve pra navegar pastas | Busca por userId ou por parentId ou os dois juntos)
-    DELETE /api/folders/{id} — soft delete
-*/
