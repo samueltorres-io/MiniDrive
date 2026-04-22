@@ -40,11 +40,43 @@ public class FolderService : IFolderService
     {
         /* Failt First */
         if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > 40)
-            throw new ApplicationException("Folder name cannot be empty or excede 40 characters!", nameof(request));
+            throw new ApplicationException("Folder name cannot be empty or excede 40 characters!");
 
         string folderName = request.Name.Trim();
 
-        DriveUser user = 
+        if (request.UserId <= 0)
+            throw new ApplicationException("User Id cannot be empty!");
+
+        var userExists = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+
+        if (!userExists)
+            /* Claro que no sistema real, não falamos que o user não existe :P */
+            throw new ApplicationException("User cannot be found!");
+
+        DriveFolder parent = null;
+        if (request.ParentId.HasValue)
+        {
+            parent = await _db.Folders
+                .FirstOrDefaultAsync(f => f.Id == request.ParentId.Value, cancellationToken);
+
+            if (parent is null)
+                throw new ApplicationException("Parent folder not found!");
+        }
+
+        var folder = new DriveFolder
+        {
+            UserId = userExists.Id,
+            User = userExists,
+            Name = folderName,
+            ParentId = parent?.Id ?? null,
+            Parent = parent ?? null,
+        };
+
+        _db.Folders.Add(folder);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new FolderResponse(folder.Id, folder.Name, folder.ParentId ?? folder.Id, folder.CreatedAt);
     }
 
     public async Task<FolderResponse> GetAsync(
