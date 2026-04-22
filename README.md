@@ -17,6 +17,6 @@ Folders
 
 Files (3)
     POST /api/files — upload (multipart: userId, folderId?, arquivo)
-    GET  /api/files?userId=&folderId= — listar
+    GET  /api/files?userId=&folderId= — listar (sem folder Id, vai para raiz)
     GET  /api/files/{id}/download — baixar o conteúdo
     DELETE /api/files/{id} — soft delete
