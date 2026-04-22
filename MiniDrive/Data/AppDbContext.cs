@@ -10,4 +10,70 @@ public class AppDbContext : DbContext
     public DbSet<DriveUser> Users { get; set; } = null!;
     public DbSet<DriveFile> Files { get; set; } = null!;
     public DbSet<DriveFolder> Folders { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+
+        /* Users */
+        modelBuilder.Entity<DriveUser>(e =>
+        {
+            e.ToTable("users");
+            e.HasKey(u => u.Id);
+            e.Property(u => u.Username)
+                .HasMaxLength(40)
+                .IsRequired();
+            e.HasIndex(u => u.Username).IsUnique();
+        });
+
+        /* Folders */
+        modelBuilder.Entity<DriveFolder>(e =>
+        {
+            e.ToTable("folders");
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Name).HasMaxLength(256).IsRequired();
+            e.HasIndex(f => f.UserId);
+            e.HasIndex(f => f.ParentId);
+            e.HasOne(f => f.User)
+                .WithMany(u => u.Folders)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(f => f.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(f => f.DeletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(f => f.Parent)
+                .WithMany(f => f.Children)
+                .HasForeignKey(f => f.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        /* Files */
+        modelBuilder.Entity<DriveFile>(e =>
+        {
+            e.ToTable("files");
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Name).HasMaxLength(256).IsRequired();
+            e.Property(f => f.Extension).HasMaxLength(20);
+            e.Property(f => f.Status)
+                .HasMaxLength(20)
+                .IsRequired()
+                .HasDefaultValue("pending");
+            e.HasIndex(f => f.UserId);
+            e.HasIndex(f => f.FolderId);
+            e.HasIndex(f => f.Status);
+            e.HasOne(f => f.User)
+                .WithMany(u => u.Files)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(f => f.Folder)
+                .WithMany(folder => folder.Files)
+                .HasForeignKey(f => f.FolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(f => f.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(f => f.DeletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+    }
 }

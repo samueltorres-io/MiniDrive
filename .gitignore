@@ -1,4 +1,6 @@
 **/bin/
 **/obj/
-
+**/.vscode/
+**/.angular/
+**/node_modules/
 .vs/
