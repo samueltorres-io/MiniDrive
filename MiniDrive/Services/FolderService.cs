@@ -79,7 +79,7 @@ public class FolderService : IFolderService
         _db.Folders.Add(folder);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return new FolderResponse(folder.Id, folder.Name, folder.ParentId, folder.CreatedAt, SubFolders: null);
+        return new FolderResponse(folder.Id, folder.Name, folder.ParentId, folder.CreatedAt, []);
     }
 
     public async Task<FolderResponse> GetAsync(
