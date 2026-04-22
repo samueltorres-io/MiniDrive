@@ -1,0 +1,164 @@
+<div class="drive">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+          <rect x="2" y="8" width="28" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M2 13h28" stroke="currentColor" stroke-width="2"/>
+          <circle cx="7" cy="10.5" r="1.2" fill="currentColor"/>
+          <circle cx="11" cy="10.5" r="1.2" fill="currentColor"/>
+        </svg>
+        <span>MiniDrive</span>
+      </div>
+      <div class="topbar-user">
+        <span class="user-badge">{{ user.username }}</span>
+      </div>
+    </header>
+  
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <ng-container *ngFor="let crumb of breadcrumb; let i = index; let last = last">
+        <button
+          class="crumb"
+          [class.crumb-active]="last"
+          (click)="navigateToCrumb(i)"
+          [disabled]="last"
+        >{{ crumb.name }}</button>
+        <span *ngIf="!last" class="crumb-sep">/</span>
+      </ng-container>
+    </nav>
+  
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn-action" (click)="showNewFolder = !showNewFolder">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+            <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+          New Folder
+        </button>
+        <button class="btn-action btn-upload" (click)="triggerUpload()" [disabled]="uploading">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+          </svg>
+          <span *ngIf="!uploading">Upload File</span>
+          <span *ngIf="uploading">Uploading…</span>
+        </button>
+        <input id="file-input" type="file" style="display:none" (change)="onFileSelected($event)"/>
+      </div>
+      <span class="toolbar-count">
+        {{ folders.length }} folder{{ folders.length !== 1 ? 's' : '' }},
+        {{ files.length }} file{{ files.length !== 1 ? 's' : '' }}
+      </span>
+    </div>
+  
+    <!-- New Folder Inline -->
+    <div class="new-folder-bar" *ngIf="showNewFolder">
+      <input
+        type="text"
+        [(ngModel)]="newFolderName"
+        placeholder="Folder name…"
+        (keyup.enter)="createFolder()"
+        (keyup.escape)="cancelNewFolder()"
+        #folderInput
+        maxlength="40"
+        autofocus
+      />
+      <button class="btn-confirm" (click)="createFolder()" [disabled]="!newFolderName.trim()">Create</button>
+      <button class="btn-cancel" (click)="cancelNewFolder()">Cancel</button>
+    </div>
+  
+    <!-- Error Banner -->
+    <div class="error-banner" *ngIf="error">
+      <span>{{ error }}</span>
+      <button (click)="dismissError()">✕</button>
+    </div>
+  
+    <!-- Content -->
+    <div class="content">
+  
+      <!-- Loading State -->
+      <div class="loading-row" *ngIf="loadingFolders || loadingFiles">
+        <span class="dot-loader"></span> Loading…
+      </div>
+  
+      <!-- Empty State -->
+      <div class="empty-state"
+        *ngIf="!loadingFolders && !loadingFiles && folders.length === 0 && files.length === 0">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+        </svg>
+        <p>This folder is empty</p>
+        <span>Upload a file or create a folder to get started.</span>
+      </div>
+  
+      <!-- Folders -->
+      <section *ngIf="folders.length > 0">
+        <h3 class="section-label">Folders</h3>
+        <div class="grid">
+          <div
+            class="card folder-card"
+            *ngFor="let folder of folders"
+            (click)="navigateTo(folder)"
+          >
+            <div class="card-icon folder-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+              </svg>
+            </div>
+            <div class="card-info">
+              <span class="card-name" [title]="folder.name">{{ folder.name }}</span>
+              <span class="card-meta">{{ folder.createdAt | date:'mediumDate' }}</span>
+            </div>
+            <button class="card-delete" (click)="deleteFolder(folder, $event)" title="Delete folder">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                <path d="M9 6V4h6v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+  
+      <!-- Files -->
+      <section *ngIf="files.length > 0">
+        <h3 class="section-label">Files</h3>
+        <div class="files-list">
+          <div class="file-row" *ngFor="let file of files">
+            <span class="file-type-badge" [attr.data-type]="fileIcon(file.extension)">
+              {{ file.extension ?? '?' }}
+            </span>
+            <span class="file-name" [title]="file.name + (file.extension ? '.' + file.extension : '')">
+              {{ file.name }}<span class="file-ext" *ngIf="file.extension">.{{ file.extension }}</span>
+            </span>
+            <span class="file-size">{{ formatSize(file.size) }}</span>
+            <span class="file-date">{{ file.createdAt | date:'mediumDate' }}</span>
+            <div class="file-actions">
+              <button class="btn-icon" (click)="downloadFile(file)" title="Download">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="8 17 12 21 16 17"/>
+                  <line x1="12" y1="12" x2="12" y2="21"/>
+                  <path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/>
+                </svg>
+              </button>
+              <button class="btn-icon btn-danger" (click)="deleteFile(file)" title="Delete">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+  
+    </div>
+  
+    <!-- Toast -->
+    <div class="toast" [class.toast-visible]="toast">{{ toast }}</div>
+  
+  </div>

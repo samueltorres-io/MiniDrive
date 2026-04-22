@@ -57,7 +57,7 @@ public class FileService : IFileService
     {
         _db     = db;
         _minio  = minio;
-        _bucket = config["Minio:Bucket"] ?? "minidrive";
+        _bucket = config["Minio__Bucket"] ?? config["Minio:Bucket"] ?? config["MINIO_BUCKET"] ?? "minidrive";
     }
 
     public async Task<FileResponse> UploadAsync(
