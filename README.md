@@ -12,7 +12,7 @@ Users
 
 Folders
     POST /api/folders — criar (body: userId, name, parentId?)
-    GET  /api/folders?userId=&parentId= — listar (serve pra navegar pastas)
+    GET  /api/folders?userId=&parentId= — listar (serve pra navegar pastas | Busca por userId ou por parentId ou os dois juntos)
     DELETE /api/folders/{id} — soft delete
 
 Files (3)
