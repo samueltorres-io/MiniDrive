@@ -52,7 +52,7 @@ public class FolderService : IFolderService
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
-        if (!user)
+        if (user is null)
             /* Claro que no sistema real, não falamos que o user não existe :P */
             throw new ApplicationException("User cannot be found!");
 
@@ -137,7 +137,11 @@ public class FolderService : IFolderService
         DeleteFolderRequest request,
         CancellationToken cancellationToken = default)
     {
-        return true;
+        /**
+        * Busca se pasta existe e se é do usuário
+        * Define como Soft Delete
+        * Pega todos os arquivos e pastas filhos e define de forma async, todos os childrens como soft deleted
+        */
     }
 
 }
