@@ -55,7 +55,7 @@ public class FolderService : IFolderService
 
         if (user is null)
             /* Claro que no sistema real, não falamos que o user não existe :P */
-            throw new ApplicationException("User cannot be found!");
+            throw new KeyNotFoundException("User cannot be found!");
 
         DriveFolder? parent = null;
         if (request.ParentId.HasValue)
@@ -64,7 +64,7 @@ public class FolderService : IFolderService
                 .FirstOrDefaultAsync(f => f.Id == request.ParentId.Value, cancellationToken);
 
             if (parent is null)
-                throw new ApplicationException("Parent folder not found!");
+                throw new KeyNotFoundException("Parent folder not found!");
         }
 
         var folder = new DriveFolder
@@ -95,7 +95,7 @@ public class FolderService : IFolderService
 
         if (user is null)
             /* Claro que no sistema real, não falamos que o user não existe :P */
-            throw new ApplicationException("User cannot be found!");
+            throw new KeyNotFoundException("User cannot be found!");
 
         DriveFolder? folder;
         if (request.FolderId is null)
@@ -126,7 +126,7 @@ public class FolderService : IFolderService
             .FirstOrDefaultAsync(cancellationToken);
 
         if (folder is null)
-            throw new ApplicationException("Folder not found!");
+            throw new KeyNotFoundException("Folder not found!");
 
         var subFolders = folder.Children
             .Select(c => new ChildFolderResponse(c.Id, c.Name, c.CreatedAt));
@@ -147,7 +147,7 @@ public class FolderService : IFolderService
                 cancellationToken);
 
         if (folder is null)
-            throw new ApplicationException("Folder not found!");
+            throw new KeyNotFoundException("Folder not found!");
 
         var allFolderIds = new List<int> { folder.Id };
         var queue = new Queue<int>();
