@@ -106,7 +106,23 @@ public class FolderService : IFolderService
                         && f.DeletedAt == null)
                 .Select(f => new ChildFolderResponse(f.Id, f.Name, f.CreatedAt))
                 .ToListAsync(cancellationToken);
+
+            return new FolderResponse(
+                Id: 0,
+                Name: "Root",
+                ParentId: null,
+                CreatedAt: DateTime.UtcNow,
+                SubFolders: rootChildren
+            );
         }
+
+        /* Pasta real -> Valida dono */
+        folder = await _db.Folders
+            .Where(f => f.Id == request.FolderId
+                    && f.UserId == request.UserId
+                    && f.DeletedAt == null)
+            .Include(f => f.Children.Where(c => c.DeletedAt == null))
+            .FirstOrDefaultAsync(cancellationToken);
 
         /**
          * Busca os dados da pasta, apenas!
