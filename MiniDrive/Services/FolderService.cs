@@ -6,10 +6,11 @@ namespace MiniDrive.Services;
 
 public record CreateFolderRequest(int UserId, string Name, int? ParentId);
 public record GetFolderRequest(int UserId, int? FolderId);
-public record DeleteFolderRequest(int FolderId);
+
+public record DeleteFolderRequest(int UserId, int FolderId);
 
 public record ChildFolderResponse(int Id, string Name, DateTime CreatedAt);
-public record FolderResponse(int Id, string Name, int? ParentId, DateTime CreatedAt, IEnumerable<ChildFolderResponse>? SubFolders);
+public record FolderResponse(int Id, string Name, int? ParentId, DateTime CreatedAt, IEnumerable<ChildFolderResponse> SubFolders);
 
 public interface IFolderService
 {
@@ -78,7 +79,7 @@ public class FolderService : IFolderService
         _db.Folders.Add(folder);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return new FolderResponse(folder.Id, folder.Name, folder.ParentId, folder.CreatedAt);
+        return new FolderResponse(folder.Id, folder.Name, folder.ParentId, folder.CreatedAt, SubFolders: null);
     }
 
     public async Task<FolderResponse> GetAsync(
@@ -89,10 +90,10 @@ public class FolderService : IFolderService
         if (request.UserId <= 0)
             throw new ApplicationException("User Id cannot be empty!");
 
-        var user = _db.Users
+        var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
-        if (!user)
+        if (user is null)
             /* Claro que no sistema real, não falamos que o user não existe :P */
             throw new ApplicationException("User cannot be found!");
 
