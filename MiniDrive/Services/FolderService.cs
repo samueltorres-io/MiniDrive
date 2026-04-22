@@ -38,7 +38,10 @@ public class FolderService : IFolderService
         CreateFolderRequest request,
         CancellationToken cancellationToken = default)
     {
-        
+        /* Failt First */
+        string folderName = string.IsNullOrWhiteSpace(request.Name)
+            ? "New Folder"
+            : request.Name.Trim();
     }
 
     public async Task<FolderResponse> GetAsync(
