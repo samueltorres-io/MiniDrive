@@ -47,14 +47,14 @@ public class FolderService : IFolderService
         if (request.UserId <= 0)
             throw new ApplicationException("User Id cannot be empty!");
 
-        var userExists = await _db.Users
+        var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
-        if (!userExists)
+        if (!user)
             /* Claro que no sistema real, não falamos que o user não existe :P */
             throw new ApplicationException("User cannot be found!");
 
-        DriveFolder parent = null;
+        DriveFolder? parent = null;
         if (request.ParentId.HasValue)
         {
             parent = await _db.Folders
@@ -66,17 +66,17 @@ public class FolderService : IFolderService
 
         var folder = new DriveFolder
         {
-            UserId = userExists.Id,
-            User = userExists,
+            UserId = user.Id,
+            User = user,
             Name = folderName,
-            ParentId = parent?.Id ?? null,
-            Parent = parent ?? null,
+            ParentId = parent?.Id,
+            Parent = parent,
         };
 
         _db.Folders.Add(folder);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return new FolderResponse(folder.Id, folder.Name, folder.ParentId ?? folder.Id, folder.CreatedAt);
+        return new FolderResponse(folder.Id, folder.Name, folder.ParentId, folder.CreatedAt);
     }
 
     public async Task<FolderResponse> GetAsync(
