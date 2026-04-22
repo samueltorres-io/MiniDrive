@@ -8,7 +8,7 @@ Rotas:
 
 Users
     POST /api/users — criar
-    GET  /api/users/{id} — obter
+    GET  /api/users/{id or/and username} — obter
 
 Folders
     POST /api/folders — criar (body: userId, name, parentId?)
