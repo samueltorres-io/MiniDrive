@@ -9,6 +9,8 @@ builder.Services.AddDbContext<AppDbContext>(opts =>
         .UseSnakeCaseNamingConvention());
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IFolderService, FolderService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 builder.Services.AddControllers();
 
