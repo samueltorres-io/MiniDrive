@@ -39,9 +39,12 @@ public class FolderService : IFolderService
         CancellationToken cancellationToken = default)
     {
         /* Failt First */
-        string folderName = string.IsNullOrWhiteSpace(request.Name)
-            ? "New Folder"
-            : request.Name.Trim();
+        if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > 40)
+            throw new ApplicationException("Folder name cannot be empty or excede 40 characters!", nameof(request));
+
+        string folderName = request.Name.Trim();
+
+        DriveUser user = 
     }
 
     public async Task<FolderResponse> GetAsync(
