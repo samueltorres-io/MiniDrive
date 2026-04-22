@@ -7,7 +7,9 @@ namespace MiniDrive.Services;
 public record CreateFolderRequest(int UserId, string Name, int? ParentId);
 public record GetFolderRequest(int UserId, int? FolderId);
 public record DeleteFolderRequest(int FolderId);
-public record FolderResponse(int Id, string Name, int? ParentId, DateTime CreatedAt);
+
+public record ChildFolderResponse(int Id, string Name, DateTime CreatedAt);
+public record FolderResponse(int Id, string Name, int? ParentId, DateTime CreatedAt, IEnumerable<ChildFolderResponse> SubFolders);
 
 public interface IFolderService
 {
@@ -80,17 +82,54 @@ public class FolderService : IFolderService
     }
 
     public async Task<FolderResponse> GetAsync(
-        CreateFolderRequest request,
+        GetFolderRequest request,
         CancellationToken cancellationToken = default)
     {
-        
+
+        if (request.UserId <= 0)
+            throw new ApplicationException("User Id cannot be empty!");
+
+        var user = _db.Users
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+
+        if (!user)
+            /* Claro que no sistema real, não falamos que o user não existe :P */
+            throw new ApplicationException("User cannot be found!");
+
+        DriveFolder? folder;
+        if (request.FolderId is null)
+        {
+            /* User em raiz -> Retornamos uma pasta virtual com os filhos do lvl0 */
+            var rootChildren = await _db.Folders
+                .Where(f => f.UserId == request.UserId
+                        && f.ParentId == null
+                        && f.DeletedAt == null)
+                .Select(f => new ChildFolderResponse(f.Id, f.Name, f.CreatedAt))
+                .ToListAsync(cancellationToken);
+        }
+
+        /**
+         * Busca os dados da pasta, apenas!
+         * Fluxo:
+         *      - User acessa a pasta
+         *      -- Backend retorna os dados da pasta (ex: FolderId)
+         *      - User busca arquivos da pasta
+         *      -- Backend retorna os arquivo da pasta via ParentId
+        */
     }
 
     public async Task<bool> DeleteAsync(
-        CreateFolderRequest request,
+        DeleteFolderRequest request,
         CancellationToken cancellationToken = default)
     {
         return true;
     }
 
 }
+
+/*
+Folders
+    POST /api/folders — criar (body: userId, name, parentId?)
+    GET  /api/folders?userId=&parentId= — listar (serve pra navegar pastas | Busca por userId ou por parentId ou os dois juntos)
+    DELETE /api/folders/{id} — soft delete
+*/
