@@ -9,7 +9,7 @@ public record GetFolderRequest(int UserId, int? FolderId);
 public record DeleteFolderRequest(int FolderId);
 
 public record ChildFolderResponse(int Id, string Name, DateTime CreatedAt);
-public record FolderResponse(int Id, string Name, int? ParentId, DateTime CreatedAt, IEnumerable<ChildFolderResponse> SubFolders);
+public record FolderResponse(int Id, string Name, int? ParentId, DateTime CreatedAt, IEnumerable<ChildFolderResponse>? SubFolders);
 
 public interface IFolderService
 {
@@ -121,17 +121,16 @@ public class FolderService : IFolderService
             .Where(f => f.Id == request.FolderId
                     && f.UserId == request.UserId
                     && f.DeletedAt == null)
-            .Include(f => f.Children.Where(c => c.DeletedAt == null))
+            .Include(f => f.Children.Where(c => c.DeletedAt == null)) /* <-- Filhos diretos */
             .FirstOrDefaultAsync(cancellationToken);
 
-        /**
-         * Busca os dados da pasta, apenas!
-         * Fluxo:
-         *      - User acessa a pasta
-         *      -- Backend retorna os dados da pasta (ex: FolderId)
-         *      - User busca arquivos da pasta
-         *      -- Backend retorna os arquivo da pasta via ParentId
-        */
+        if (folder is null)
+            throw new ApplicationException("Folder not found!");
+
+        var subFolders = folder.Children
+            .Select(c => new ChildFolderResponse(c.Id, c.Name, c.CreatedAt));
+
+        return new FolderResponse(folder.Id, folder.Name, folder.ParentId, folder.CreatedAt, subFolders);
     }
 
     public async Task<bool> DeleteAsync(
